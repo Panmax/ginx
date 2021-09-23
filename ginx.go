@@ -7,7 +7,8 @@ import (
 )
 
 type Ginx struct {
-	router map[string]*Tree
+	router      map[string]*Tree
+	middlewares []ControllerHandler
 }
 
 func NewGinx() *Ginx {
@@ -22,19 +23,21 @@ func NewGinx() *Ginx {
 func (g *Ginx) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	ctx := NewContext(request, response)
 
-	handler := g.FindRouteByRequest(request)
-	if handler == nil {
+	handlers := g.FindRouteByRequest(request)
+	if handlers == nil {
 		ctx.Json(http.StatusNotFound, http.StatusText(http.StatusNotFound))
 		return
 	}
 
-	if err := handler(ctx); err != nil {
+	ctx.SetHandlers(handlers)
+
+	if err := ctx.Next(); err != nil {
 		ctx.Json(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
 	}
 }
 
-func (g *Ginx) FindRouteByRequest(request *http.Request) ControllerHandler {
+func (g *Ginx) FindRouteByRequest(request *http.Request) []ControllerHandler {
 	uri := request.URL.Path
 	method := request.Method
 	upperMethod := strings.ToUpper(method)
@@ -45,26 +48,34 @@ func (g *Ginx) FindRouteByRequest(request *http.Request) ControllerHandler {
 	return nil
 }
 
-func (g *Ginx) Get(url string, handler ControllerHandler) {
-	if err := g.router["GET"].AddRouter(url, handler); err != nil {
+func (g *Ginx) Use(middirewares ...ControllerHandler) {
+	g.middlewares = middirewares
+}
+
+func (g *Ginx) Get(url string, handlers ...ControllerHandler) {
+	allHandlers := append(g.middlewares, handlers...)
+	if err := g.router["GET"].AddRouter(url, allHandlers); err != nil {
 		log.Fatal("add router error: ", err)
 	}
 }
 
-func (g *Ginx) Post(url string, handler ControllerHandler) {
-	if err := g.router["POST"].AddRouter(url, handler); err != nil {
+func (g *Ginx) Post(url string, handlers ...ControllerHandler) {
+	allHandlers := append(g.middlewares, handlers...)
+	if err := g.router["POST"].AddRouter(url, allHandlers); err != nil {
 		log.Fatal("add router error: ", err)
 	}
 }
 
-func (g *Ginx) Put(url string, handler ControllerHandler) {
-	if err := g.router["PUT"].AddRouter(url, handler); err != nil {
+func (g *Ginx) Put(url string, handlers ...ControllerHandler) {
+	allHandlers := append(g.middlewares, handlers...)
+	if err := g.router["PUT"].AddRouter(url, allHandlers); err != nil {
 		log.Fatal("add router error: ", err)
 	}
 }
 
-func (g *Ginx) Delete(url string, handler ControllerHandler) {
-	if err := g.router["DELETE"].AddRouter(url, handler); err != nil {
+func (g *Ginx) Delete(url string, handlers ...ControllerHandler) {
+	allHandlers := append(g.middlewares, handlers...)
+	if err := g.router["DELETE"].AddRouter(url, allHandlers); err != nil {
 		log.Fatal("add router error: ", err)
 	}
 }
