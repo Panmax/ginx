@@ -2,6 +2,7 @@ package ginx
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"net/http"
 	"net/url"
@@ -11,6 +12,12 @@ type IResponse interface {
 	Json(obj interface{}) IResponse
 
 	JsonP(object interface{}) IResponse
+
+	Html(file string, obj interface{}) IResponse
+
+	Text(format string, values ...interface{}) IResponse
+
+	Redirect(path string) IResponse
 
 	SetCookie(key, val string, maxAge int, path, domain string, secure, httpOnly bool) IResponse
 
@@ -59,6 +66,30 @@ func (ctx *Context) JsonP(obj interface{}) IResponse {
 	if err != nil {
 		return ctx
 	}
+	return ctx
+}
+
+func (ctx *Context) Html(file string, obj interface{}) IResponse {
+	t, err := template.New("output").ParseFiles(file)
+	if err != nil {
+		return ctx
+	}
+	if err := t.Execute(ctx.responseWriter, obj); err != nil {
+		return ctx
+	}
+	ctx.SetHeader("Content-Type", "application/html")
+	return ctx
+}
+
+func (ctx *Context) Text(format string, values ...interface{}) IResponse {
+	out := fmt.Sprintf(format, values...)
+	ctx.SetHeader("Content-Type", "application/text")
+	ctx.responseWriter.Write([]byte(out))
+	return ctx
+}
+
+func (ctx *Context) Redirect(path string) IResponse {
+	http.Redirect(ctx.responseWriter, ctx.request, path, http.StatusMovedPermanently)
 	return ctx
 }
 
