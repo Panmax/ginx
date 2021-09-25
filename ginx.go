@@ -23,13 +23,15 @@ func NewGinx() *Ginx {
 func (g *Ginx) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	ctx := NewContext(request, response)
 
-	handlers := g.FindRouteByRequest(request)
-	if handlers == nil {
+	node := g.FindRouteNodeByRequest(request)
+	if node == nil {
 		ctx.Json(http.StatusNotFound, http.StatusText(http.StatusNotFound))
 		return
 	}
 
-	ctx.SetHandlers(handlers)
+	ctx.SetHandlers(node.handlers)
+	params := node.parseParamsFromEndNode(request.URL.Path)
+	ctx.SetParams(params)
 
 	if err := ctx.Next(); err != nil {
 		ctx.Json(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
@@ -37,13 +39,13 @@ func (g *Ginx) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	}
 }
 
-func (g *Ginx) FindRouteByRequest(request *http.Request) []ControllerHandler {
+func (g *Ginx) FindRouteNodeByRequest(request *http.Request) *node {
 	uri := request.URL.Path
 	method := request.Method
 	upperMethod := strings.ToUpper(method)
 
 	if methodTree, ok := g.router[upperMethod]; ok {
-		return methodTree.FindHandler(uri)
+		return methodTree.root.matchNode(uri)
 	}
 	return nil
 }

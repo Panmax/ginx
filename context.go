@@ -18,6 +18,8 @@ type Context struct {
 
 	handlers []ControllerHandler
 	index    int
+
+	params map[string]string
 }
 
 func NewContext(r *http.Request, w http.ResponseWriter) *Context {
@@ -36,6 +38,10 @@ func (ctx *Context) SetHasTimeout() {
 
 func (ctx *Context) SetHandlers(handlers []ControllerHandler) {
 	ctx.handlers = handlers
+}
+
+func (ctx *Context) SetParams(params map[string]string) {
+	ctx.params = params
 }
 
 func (ctx *Context) Next() error {
