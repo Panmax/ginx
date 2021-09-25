@@ -25,7 +25,7 @@ func (g *Ginx) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 
 	node := g.FindRouteNodeByRequest(request)
 	if node == nil {
-		ctx.Json(http.StatusNotFound, http.StatusText(http.StatusNotFound))
+		ctx.SetStatus(http.StatusNotFound).Json(http.StatusText(http.StatusNotFound))
 		return
 	}
 
@@ -34,7 +34,7 @@ func (g *Ginx) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	ctx.SetParams(params)
 
 	if err := ctx.Next(); err != nil {
-		ctx.Json(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		ctx.SetStatus(http.StatusInternalServerError).Json(http.StatusText(http.StatusInternalServerError))
 		return
 	}
 }

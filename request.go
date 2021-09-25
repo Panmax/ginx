@@ -10,6 +10,7 @@ import (
 
 type IRequest interface {
 	QueryInt(key string, def int) (int, bool)
+	QueryString(key, def string) (string, bool)
 
 	ParamInt(key string, def int) (int, bool)
 
@@ -40,6 +41,15 @@ func (ctx *Context) QueryInt(key string, def int) (int, bool) {
 	if vals, ok := ctx.QueryAll()[key]; ok {
 		if len(vals) > 0 {
 			return cast.ToInt(vals[0]), true
+		}
+	}
+	return def, false
+}
+
+func (ctx *Context) QueryString(key, def string) (string, bool) {
+	if vals, ok := ctx.QueryAll()[key]; ok {
+		if len(vals) > 0 {
+			return vals[0], true
 		}
 	}
 	return def, false
