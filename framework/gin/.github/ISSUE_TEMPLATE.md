@@ -14,7 +14,7 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
+	"github.com/panmax/ginx/framework/gin"
 )
 
 func main() {
